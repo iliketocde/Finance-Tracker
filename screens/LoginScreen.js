@@ -8,20 +8,27 @@ const auth = getAuth(app);
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   const login = () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+      setMessage('Please enter email and password');
+      setIsError(true);
       return;
     }
 
     signInWithEmailAndPassword(auth, email, password)
       .then(() => {
-        Alert.alert('Success', 'Logged in!');
-        navigation.navigate('Chatbot'); // Replace with your main screen
+        setMessage('Login successful!');
+        setIsError(false);
+        setTimeout(() => {
+          navigation.navigate('Chatbot');
+        }, 1500); // Show success message for 1.5 seconds before navigating
       })
       .catch(error => {
-        Alert.alert('Login Failed', error.message);
+        setMessage(error.message);
+        setIsError(true);
       });
   };
 
@@ -32,6 +39,15 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
+
+      {message ? (
+        <Text style={[
+          styles.message,
+          isError ? styles.errorMessage : styles.successMessage
+        ]}>
+          {message}
+        </Text>
+      ) : null}
 
       <TextInput
         placeholder="Email"
@@ -69,6 +85,21 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, justifyContent: 'center', backgroundColor: '#fff' },
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  message: {
+    padding: 10,
+    marginBottom: 20,
+    borderRadius: 5,
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  errorMessage: {
+    backgroundColor: '#ffebee',
+    color: '#c62828',
+  },
+  successMessage: {
+    backgroundColor: '#e8f5e9',
+    color: '#2e7d32',
+  },
   input: { borderWidth: 1, borderColor: '#ccc', marginBottom: 15, padding: 10, borderRadius: 5 },
   link: { color: 'blue', marginTop: 15, textAlign: 'center' },
   continueBtn: {

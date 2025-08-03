@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { app } from '../firebaseConfig';
 
@@ -8,6 +8,8 @@ const auth = getAuth(app);
 export default function SignupScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   const isValidEmail = (email) => {
     return /\S+@\S+\.\S+/.test(email);
@@ -15,34 +17,50 @@ export default function SignupScreen({ navigation }) {
 
   const signup = () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
+      setMessage('Please enter email and password');
+      setIsError(true);
       return;
     }
 
     if (!isValidEmail(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+      setMessage('Please enter a valid email address');
+      setIsError(true);
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      setMessage('Password must be at least 6 characters');
+      setIsError(true);
       return;
     }
 
     createUserWithEmailAndPassword(auth, email, password)
       .then(() => {
-        Alert.alert('Success', 'Account created!');
-        navigation.navigate('Login');
+        setMessage('Account created successfully!');
+        setIsError(false);
+        setTimeout(() => {
+          navigation.navigate('Login');
+        }, 1500);
       })
       .catch(error => {
         console.log('Signup error:', error);
-        Alert.alert('Signup Failed', error.message);
+        setMessage(error.message);
+        setIsError(true);
       });
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Sign Up</Text>
+
+      {message ? (
+        <Text style={[
+          styles.message,
+          isError ? styles.errorMessage : styles.successMessage
+        ]}>
+          {message}
+        </Text>
+      ) : null}
 
       <TextInput
         placeholder="Email"
@@ -85,6 +103,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center'
+  },
+  message: {
+    padding: 10,
+    marginBottom: 20,
+    borderRadius: 5,
+    textAlign: 'center',
+    fontSize: 16,
+  },
+  errorMessage: {
+    backgroundColor: '#ffebee',
+    color: '#c62828',
+  },
+  successMessage: {
+    backgroundColor: '#e8f5e9',
+    color: '#2e7d32',
   },
   input: {
     borderWidth: 1,
