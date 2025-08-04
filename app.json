@@ -25,11 +25,17 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "extra": {
       "eas": {
         "projectId": "fbf9796f-aaf0-46b7-9b38-6f2788c5b1af"
       }
     },
-    "owner": "thebestcoderever"
+    "owner": "thebestcoderever",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }

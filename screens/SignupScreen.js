@@ -51,42 +51,39 @@ export default function SignupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
-
-      {message ? (
-        <Text style={[
-          styles.message,
-          isError ? styles.errorMessage : styles.successMessage
-        ]}>
-          {message}
+      <View style={styles.card}>
+        <Text style={styles.title}>Sign Up</Text>
+        {message ? (
+          <Text style={[
+            styles.message,
+            isError ? styles.errorMessage : styles.successMessage
+          ]}>
+            {message}
+          </Text>
+        ) : null}
+        <TextInput
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <TextInput
+          placeholder="Password"
+          value={password}
+          onChangeText={setPassword}
+          style={styles.input}
+          secureTextEntry
+        />
+        <Button title="Sign Up" onPress={signup} />
+        <Text
+          style={styles.link}
+          onPress={() => navigation.navigate('Login')}
+        >
+          Already have an account? Log In
         </Text>
-      ) : null}
-
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-
-      <TextInput
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        style={styles.input}
-        secureTextEntry
-      />
-
-      <Button title="Sign Up" onPress={signup} />
-
-      <Text
-        style={styles.link}
-        onPress={() => navigation.navigate('Login')}
-      >
-        Already have an account? Log In
-      </Text>
+      </View>
     </View>
   );
 }
@@ -94,22 +91,43 @@ export default function SignupScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#f9fafb',
     justifyContent: 'center',
-    backgroundColor: '#fff'
+    alignItems: 'center',
+    minHeight: '100%',
+    padding: 16,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderRadius: 32,
+    padding: 28,
+    marginVertical: 24,
+    shadowColor: '#6366f1',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    elevation: 8,
+    backdropFilter: 'blur(12px)', // frosted glass effect (web only)
+    alignItems: 'center',
   },
   title: {
+    fontFamily: 'System',
     fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center'
+    color: '#111827',
+    marginBottom: 24,
+    textAlign: 'center',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   message: {
     padding: 10,
     marginBottom: 20,
-    borderRadius: 5,
+    borderRadius: 8,
     textAlign: 'center',
     fontSize: 16,
+    fontFamily: 'System',
   },
   errorMessage: {
     backgroundColor: '#ffebee',
@@ -122,13 +140,20 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    marginBottom: 15,
-    padding: 10,
-    borderRadius: 5
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 18,
+    fontSize: 16,
+    backgroundColor: '#f9fafb',
+    fontFamily: 'System',
   },
   link: {
-    color: 'blue',
-    marginTop: 15,
-    textAlign: 'center'
-  }
+    color: '#6366f1',
+    marginTop: 16,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+    fontSize: 16,
+    fontFamily: 'System',
+    fontWeight: '500',
+  },
 });
