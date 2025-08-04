@@ -1,75 +1,79 @@
-import React, { useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Pressable, Animated } from 'react-native';
-
-const transactions = [
-  { id: '1', category: 'Food', amount: 25 },
-  { id: '2', category: 'Entertainment', amount: 40 },
-  { id: '3', category: 'Food', amount: 15 },
-  { id: '4', category: 'Transport', amount: 10 },
-  { id: '5', category: 'Entertainment', amount: 20 },
-];
-
-const CategoryRow = React.memo(({ category, amount, percentage }) => {
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.row,
-        pressed && { transform: [{ scale: 0.98 }], shadowOpacity: 0.15 },
-      ]}
-    >
-      <View style={styles.labelContainer}>
-        <Text style={styles.category}>{category}</Text>
-        <Text style={styles.percentage}>{percentage}%</Text>
-      </View>
-      <View style={styles.barBackground}>
-        <View style={[styles.barFill, { width: `${percentage}%` }]} />
-      </View>
-      <Text style={styles.amount}>${amount.toFixed(2)}</Text>
-    </Pressable>
-  );
-});
-
-function calculateSpendingByCategory(transactions) {
-  const summary = {};
-  transactions.forEach(({ category, amount }) => {
-    summary[category] = (summary[category] || 0) + amount;
-  });
-  return summary;
-}
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, Animated, Pressable, Platform } from 'react-native';
+import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { getApp } from 'firebase/app';
 
 export default function SpendingInsightsScreen() {
-  const spendingByCategory = calculateSpendingByCategory(transactions);
-  const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const [transactions, setTransactions] = useState([]);
+  const [totalSpent, setTotalSpent] = useState(0);
+  const animatedSpent = useState(new Animated.Value(0))[0];
 
-  const renderItem = useCallback(({ item: [category, amount] }) => {
-    const percentage = ((amount / totalSpent) * 100).toFixed(1);
-    return (
-      <CategoryRow
-        category={category}
-        amount={amount}
-        percentage={percentage}
-      />
-    );
-  }, [totalSpent]);
+  const user = getAuth().currentUser;
+  const db = getFirestore(getApp());
+
+  useEffect(() => {
+    const fetchTransactions = async () => {
+      if (!user) return;
+
+      try {
+        const q = query(
+          collection(db, 'transactions'),
+          where('uid', '==', user.uid)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const data = querySnapshot.docs.map((doc) => doc.data());
+
+        const total = data.reduce((acc, curr) => acc + (curr.amount || 0), 0);
+        setTransactions(data);
+        setTotalSpent(total);
+
+        Animated.timing(animatedSpent, {
+          toValue: total,
+          duration: 1000,
+          useNativeDriver: false,
+        }).start();
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+      }
+    };
+
+    fetchTransactions();
+  }, [user]);
+
+  const renderItem = ({ item }) => (
+    <Pressable
+      style={({ pressed }) => [
+        styles.transactionCard,
+        pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] },
+      ]}
+    >
+      <Text style={styles.category}>{item.category || 'Unknown'}</Text>
+      <Text style={styles.amount}>-${item.amount?.toFixed(2) || '0.00'}</Text>
+    </Pressable>
+  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.centeredContent}>
-        <View style={styles.card}>
-          <Text style={styles.header}>Spending Insights</Text>
-          <View style={styles.totalCard}>
-            <Text style={styles.totalLabel}>Total Spent</Text>
-            <Text style={styles.totalAmount}>${totalSpent.toFixed(2)}</Text>
-          </View>
-          <Text style={styles.subheader}>Spending by Category</Text>
-          <FlatList
-            data={Object.entries(spendingByCategory)}
-            keyExtractor={([category]) => category}
-            renderItem={renderItem}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 20 }}
-          />
-        </View>
+      <View style={styles.card}>
+        <Text style={styles.title}>Spending Insights</Text>
+
+        <Text style={styles.label}>Total Spent:</Text>
+        <Animated.Text style={styles.total}>
+          ${animatedSpent.interpolate({
+            inputRange: [0, totalSpent],
+            outputRange: [0, totalSpent],
+            extrapolate: 'clamp',
+          }).__getValue().toFixed(2)}
+        </Animated.Text>
+
+        <FlatList
+          data={transactions}
+          renderItem={renderItem}
+          keyExtractor={(_, index) => index.toString()}
+          contentContainerStyle={styles.list}
+        />
       </View>
     </View>
   );
@@ -78,129 +82,64 @@ export default function SpendingInsightsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
-    justifyContent: 'center',
+    backgroundColor: '#0f172a', // dark navy background
     alignItems: 'center',
-    minHeight: '100%',
-    padding: 16,
-  },
-  centeredContent: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 420,
     justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
+    padding: 20,
   },
   card: {
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.75)',
+    maxWidth: 400,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 32,
-    padding: 28,
-    marginVertical: 24,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 32,
-    elevation: 8,
-    backdropFilter: 'blur(12px)', // frosted glass effect (web only)
-  },
-  header: {
-    fontFamily: 'System',
-    fontSize: 28,
-    color: '#111827',
-    marginBottom: 24,
-    textAlign: 'center',
-    fontWeight: '700',
-    letterSpacing: 0.2,
-  },
-  totalCard: {
-    backgroundColor: '#6366f1',
-    borderRadius: 24,
     padding: 24,
-    marginBottom: 32,
-    alignItems: 'center',
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    backdropFilter: Platform.OS === 'web' ? 'blur(20px)' : undefined,
   },
-  totalLabel: {
-    fontFamily: 'System',
-    fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  totalAmount: {
-    fontFamily: 'System',
-    fontSize: 36,
-    color: '#fff',
+  title: {
+    fontSize: 24,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    color: '#ffffff',
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  subheader: {
-    fontFamily: 'System',
-    fontSize: 20,
-    color: '#374151',
+  label: {
+    fontSize: 16,
+    color: '#d1d5db',
+    marginTop: 10,
+  },
+  total: {
+    fontSize: 32,
+    color: '#f87171',
+    fontWeight: 'bold',
     marginBottom: 20,
-    fontWeight: '600',
-    letterSpacing: 0.1,
   },
-  row: {
-    marginBottom: 20,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    padding: 18,
-    borderRadius: 24,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
-    transitionDuration: '150ms',
-    transitionProperty: 'transform, box-shadow',
-    transitionTimingFunction: 'ease',
+  list: {
+    marginTop: 12,
+    gap: 12,
   },
-  labelContainer: {
+  transactionCard: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 16,
+    borderRadius: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    shadowColor: '#fff',
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 4,
   },
   category: {
-    fontFamily: 'System',
-    fontSize: 18,
-    color: '#111827',
-    fontWeight: '600',
-  },
-  percentage: {
-    fontFamily: 'System',
     fontSize: 16,
-    color: '#6B7280',
-    fontWeight: '400',
-  },
-  barBackground: {
-    height: 12,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: 4,
-  },
-  barFill: {
-    height: '100%',
-    backgroundColor: '#3b82f6',
-    borderRadius: 6,
-    transitionDuration: '300ms',
-    transitionProperty: 'width',
-    transitionTimingFunction: 'ease',
+    color: '#f3f4f6',
   },
   amount: {
-    marginTop: 8,
-    fontFamily: 'System',
     fontSize: 16,
-    color: '#111827',
-    textAlign: 'right',
+    color: '#f87171',
     fontWeight: '500',
   },
 });
