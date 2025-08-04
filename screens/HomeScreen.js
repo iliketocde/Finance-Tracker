@@ -1,92 +1,94 @@
-import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, Pressable, StyleSheet, Keyboard } from 'react-native';
 
 export default function HomeScreen({ navigation }) {
+  const [input, setInput] = useState('');
+
+  const onSubmit = () => {
+    if (input.trim() === '') return;
+    Keyboard.dismiss();
+    navigation.navigate('Chatbot', { initialMessage: input.trim() });
+    setInput('');
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.centeredContent}>
-        <View style={styles.card}>
-          <Text style={styles.header}>Welcome to Finance Tracker!</Text>
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={() => navigation.navigate('Chatbot')}
-          >
-            <Text style={styles.buttonText}>Go to Chatbot</Text>
-          </Pressable>
-        </View>
-      </View>
+      <Text style={styles.header}>Welcome to Finance Tracker!</Text>
+
+      <TextInput
+        style={styles.input}
+        placeholder="Ask me anything..."
+        value={input}
+        onChangeText={setInput}
+        onSubmitEditing={onSubmit}
+        returnKeyType="send"
+        placeholderTextColor="#7a8fa6"
+      />
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.button,
+          pressed && styles.buttonPressed,
+          input.trim() === '' && styles.buttonDisabled,
+        ]}
+        onPress={onSubmit}
+        disabled={input.trim() === ''}
+      >
+        <Text style={styles.buttonText}>Ask</Text>
+      </Pressable>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: '100%',
-    padding: 16,
-  },
-  centeredContent: {
-    flex: 1,
-    width: '100%',
-    maxWidth: 420,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-  },
-  card: {
-    width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.75)',
-    borderRadius: 32,
-    padding: 28,
-    marginVertical: 24,
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 32,
-    elevation: 8,
-    backdropFilter: 'blur(12px)', // frosted glass effect (web only)
-    alignItems: 'center',
+    padding: 24,
   },
   header: {
-    fontFamily: 'System',
     fontSize: 28,
-    color: '#111827',
-    marginBottom: 32,
-    textAlign: 'center',
     fontWeight: '700',
-    letterSpacing: 0.2,
+    color: '#111827',
+    marginBottom: 36,
+    textAlign: 'center',
+  },
+  input: {
+    width: '100%',
+    maxWidth: 420,
+    borderWidth: 1,
+    borderColor: '#6366f1',
+    borderRadius: 32,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    fontSize: 18,
+    marginBottom: 16,
+    backgroundColor: '#fff',
+    color: '#111827',
   },
   button: {
     backgroundColor: '#6366f1',
     borderRadius: 16,
     paddingVertical: 16,
     paddingHorizontal: 32,
-    marginTop: 12,
     shadowColor: '#6366f1',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
-    elevation: 2,
-    alignItems: 'center',
-    transitionDuration: '150ms',
-    transitionProperty: 'transform, box-shadow',
-    transitionTimingFunction: 'ease',
+    elevation: 4,
   },
   buttonPressed: {
     backgroundColor: '#3b82f6',
-    transform: [{ scale: 0.98 }],
-    shadowOpacity: 0.25,
+  },
+  buttonDisabled: {
+    backgroundColor: '#a5b4fc',
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
     fontWeight: '600',
-    fontFamily: 'System',
-    letterSpacing: 0.1,
+    fontSize: 18,
+    textAlign: 'center',
   },
 });

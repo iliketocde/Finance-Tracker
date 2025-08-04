@@ -1,26 +1,56 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, Pressable, Image } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  StyleSheet,
+  Pressable,
+  Image,
+  Platform,
+} from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons'; // Expo vector icons
+import { queryOpenRouter } from '../aiApi'; // <-- Adjust path as needed
 
 export default function ChatbotScreen() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
   const flatListRef = useRef(null);
 
-  const sendMessage = () => {
-    if (input.trim() === '') return;
+  useEffect(() => {
+    if (messages.length > 0) {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (input.trim() === '' || loading) return;
+
+    setLoading(true);
 
     const userMsg = { id: Date.now().toString(), text: input, isUser: true };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
 
-    setTimeout(() => {
+    try {
+      const aiResponse = await queryOpenRouter(input);
       const botMsg = {
         id: (Date.now() + 1).toString(),
-        text: `You said: "${input}". Great question! 💡`,
+        text: aiResponse || "Sorry, I couldn't get a response right now.",
         isUser: false,
       };
       setMessages(prev => [...prev, botMsg]);
-    }, 1000);
+    } catch {
+      const errorMsg = {
+        id: (Date.now() + 2).toString(),
+        text: "Sorry, something went wrong.",
+        isUser: false,
+      };
+      setMessages(prev => [...prev, errorMsg]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderItem = ({ item }) => (
@@ -31,7 +61,7 @@ export default function ChatbotScreen() {
         </View>
       )}
       <View style={[styles.message, item.isUser ? styles.userMsg : styles.botMsg]}>
-        <Text style={styles.msgText}>{item.text}</Text>
+        <Text style={[styles.msgText, item.isUser && { color: '#fff' }]}>{item.text}</Text>
       </View>
       {item.isUser && (
         <View style={styles.avatarContainer}>
@@ -53,6 +83,7 @@ export default function ChatbotScreen() {
         keyExtractor={item => item.id}
         contentContainerStyle={styles.chatContainer}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        keyboardShouldPersistTaps="handled"
       />
       <View style={styles.inputContainer}>
         <TextInput
@@ -60,8 +91,27 @@ export default function ChatbotScreen() {
           onChangeText={setInput}
           placeholder="Ask me anything..."
           style={styles.input}
+          editable={!loading}
+          onSubmitEditing={sendMessage}
+          returnKeyType="send"
+          placeholderTextColor="#7a8fa6"
         />
-        <Button title="Send" onPress={sendMessage} />
+        <Pressable
+          style={({ pressed }) => [
+            styles.sendButton,
+            pressed && { opacity: 0.7, transform: [{ scale: 0.95 }] },
+            loading && { opacity: 0.5 },
+          ]}
+          onPress={sendMessage}
+          disabled={loading}
+          android_ripple={{ color: '#4f83cc' }}
+        >
+          <MaterialCommunityIcons
+            name="send-circle"
+            size={36}
+            color={loading ? '#a0bce6' : '#3b82f6'}
+          />
+        </Pressable>
       </View>
     </View>
   );
@@ -70,16 +120,21 @@ export default function ChatbotScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff', // Changed to white background
-    paddingTop: 40,
+    backgroundColor: '#ffffff',
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
   },
   title: {
     fontSize: 24,
-    color: '#6366f1', // Changed to indigo for good contrast on white
+    color: '#0284c7', // Sky blue
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
     letterSpacing: 0.5,
+    fontFamily: Platform.select({
+      ios: 'Comic Sans MS',
+      android: 'Comic Sans MS', // fallback for android, may not be exact
+      default: 'System',
+    }),
     textTransform: 'uppercase',
   },
   chatContainer: {
@@ -89,7 +144,7 @@ const styles = StyleSheet.create({
   messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    marginVertical: 6,
+    marginVertical: 8,
   },
   userRow: {
     justifyContent: 'flex-end',
@@ -102,78 +157,77 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     overflow: 'hidden',
-    marginHorizontal: 6,
-    backgroundColor: '#e5e7eb', // lighter background for avatars on white
+    marginHorizontal: 8,
+    backgroundColor: '#cce4ff', // light sky blue background for avatar
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#0284c7',
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
   },
   avatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
   },
   message: {
-    padding: 12,
-    borderRadius: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    borderRadius: 50, // large to make oval shape
     maxWidth: '72%',
-    minWidth: 40,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.1)',
-    backgroundColor: 'rgba(0,0,0,0.05)', // subtle light glass effect for messages
+    minWidth: 60,
+    shadowColor: '#3b82f6',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 7,
   },
   userMsg: {
-    backgroundColor: '#6366f1', // Indigo solid for user messages
+    backgroundColor: '#3b82f6', // Blue
     alignSelf: 'flex-end',
   },
   botMsg: {
-    backgroundColor: 'rgba(243,244,246,0.8)', // light grey glass effect for bot messages
+    backgroundColor: '#bae6fd', // Sky blue light bubble
     alignSelf: 'flex-start',
   },
   msgText: {
     fontSize: 16,
-    color: '#111827', // dark text on light backgrounds
+    fontFamily: Platform.select({
+      ios: 'Comic Sans MS',
+      android: 'Comic Sans MS',
+      default: 'System',
+    }),
+    color: '#111827',
   },
   inputContainer: {
     flexDirection: 'row',
-    padding: 12,
-    backgroundColor: '#f3f4f6', // light grey background for input container
+    padding: 14,
+    backgroundColor: '#e0f2fe', // very light sky blue background
     borderTopWidth: 1,
-    borderTopColor: '#d1d5db',
+    borderTopColor: '#bae6fd',
     alignItems: 'center',
   },
   input: {
     flex: 1,
-    borderColor: '#cbd5e1',
+    borderColor: '#7dd3fc',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    color: '#111827',
-    backgroundColor: '#fff',
+    borderRadius: 30,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     fontSize: 16,
+    fontFamily: Platform.select({
+      ios: 'Comic Sans MS',
+      android: 'Comic Sans MS',
+      default: 'System',
+    }),
+    color: '#0c4a6e', // dark blue text
+    backgroundColor: '#ffffff',
   },
   sendButton: {
-    marginLeft: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#6366f1',
-    borderRadius: 12,
-    alignItems: 'center',
+    marginLeft: 12,
     justifyContent: 'center',
-    shadowColor: '#6366f1',
-    shadowOpacity: 0.4,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-  },
-  sendText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
+    alignItems: 'center',
   },
 });
-
-

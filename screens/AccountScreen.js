@@ -1,32 +1,32 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Animated, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDoc } from 'firebase/firestore';
-import { getApp } from 'firebase/app';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebaseConfig';
 
-export default function AccountScreen() {
+export default function AccountScreen({ navigation }) {
   const user = getAuth().currentUser;
-  const db = getFirestore(getApp());
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState('');
   const [loading, setLoading] = useState(true);
-  const animatedBalance = useState(new Animated.Value(0))[0];
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
 
     const fetchBalance = async () => {
       try {
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
-        const data = userDoc.exists() ? userDoc.data() : {};
-        const newBalance = data.balance ?? 0;
-        setBalance(newBalance);
-        Animated.timing(animatedBalance, {
-          toValue: newBalance,
-          duration: 1000,
-          useNativeDriver: false,
-        }).start();
-      } catch (err) {
-        console.error('Failed to fetch balance:', err);
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setBalance(data.balance?.toString() || '0');
+        } else {
+          setBalance('0');
+        }
+      } catch (error) {
+        console.error('Failed to fetch balance:', error);
+        Alert.alert('Error', 'Failed to load your balance.');
       } finally {
         setLoading(false);
       }
@@ -35,53 +35,89 @@ export default function AccountScreen() {
     fetchBalance();
   }, [user]);
 
+  const handleSave = async () => {
+    const numericBalance = parseFloat(balance);
+    if (isNaN(numericBalance)) {
+      Alert.alert('Invalid Input', 'Please enter a valid number for balance.');
+      return;
+    }
+    setSaving(true);
+
+    try {
+      const docRef = doc(db, 'users', user.uid);
+      await setDoc(docRef, { balance: numericBalance }, { merge: true });
+      Alert.alert('Success', 'Balance updated successfully.');
+    } catch (error) {
+      console.error('Failed to save balance:', error);
+      Alert.alert('Error', 'Failed to update your balance.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
-      await signOut(getAuth());
-    } catch (err) {
-      console.error('Logout error:', err);
+      await signOut(auth);
+      navigation.replace('Login'); // or your landing page
+    } catch (error) {
+      Alert.alert('Logout Failed', error.message);
     }
   };
 
   if (!user) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>No user data found.</Text>
+        <Text style={styles.title}>No user logged in.</Text>
       </View>
     );
   }
 
-  const initials = user.email?.charAt(0)?.toUpperCase() || '?';
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#38bdf8" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
-        </View>
-        <Text style={styles.title}>Welcome back</Text>
-        <Text style={styles.label}>Email:</Text>
-        <Text style={styles.value}>{user.email}</Text>
+      <Text style={styles.title}>Account Details</Text>
 
-        <Text style={styles.label}>Balance:</Text>
-        <Animated.Text style={styles.balance}>
-          ${animatedBalance.interpolate({
-            inputRange: [0, balance],
-            outputRange: [0, balance],
-            extrapolate: 'clamp',
-          }).__getValue().toFixed(2)}
-        </Animated.Text>
+      <Text style={styles.label}>Email:</Text>
+      <Text style={styles.value}>{user.email}</Text>
 
-        <Pressable
-          onPress={handleLogout}
-          style={({ pressed }) => [
-            styles.button,
-            pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
-          ]}
-        >
-          <Text style={styles.buttonText}>Log Out</Text>
-        </Pressable>
-      </View>
+      <Text style={[styles.label, { marginTop: 24 }]}>Balance:</Text>
+      <TextInput
+        style={styles.input}
+        value={balance}
+        keyboardType="numeric"
+        onChangeText={setBalance}
+        editable={!saving}
+        placeholder="Enter your balance"
+      />
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.button,
+          pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+          saving && { backgroundColor: '#94a3b8' },
+        ]}
+        onPress={handleSave}
+        disabled={saving}
+      >
+        <Text style={styles.buttonText}>{saving ? 'Saving...' : 'Save Balance'}</Text>
+      </Pressable>
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.logoutButton,
+          pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+        ]}
+        onPress={handleLogout}
+      >
+        <Text style={styles.logoutText}>Logout</Text>
+      </Pressable>
     </View>
   );
 }
@@ -89,78 +125,64 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0f172a', // dark background
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    padding: 30,
-    borderRadius: 32,
-    alignItems: 'center',
-    shadowColor: '#fff',
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 10 },
-    backdropFilter: Platform.OS === 'web' ? 'blur(20px)' : undefined,
-  },
-  avatar: {
-    backgroundColor: '#6366f1',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#6366f1',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-  },
-  avatarText: {
-    fontSize: 32,
-    color: '#fff',
-    fontWeight: 'bold',
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    paddingTop: 40,
   },
   title: {
-    fontSize: 24,
-    color: '#fff',
+    fontSize: 26,
     fontWeight: '700',
-    marginBottom: 16,
+    color: '#0c4a6e',
+    textAlign: 'center',
+    marginBottom: 32,
+    fontFamily: 'Comic Sans MS',
   },
   label: {
-    fontSize: 16,
-    color: '#d1d5db',
-    marginTop: 10,
+    fontSize: 18,
+    color: '#0369a1',
+    marginBottom: 8,
+    fontFamily: 'Comic Sans MS',
   },
   value: {
-    fontSize: 18,
-    color: '#fff',
-    marginBottom: 4,
+    fontSize: 20,
+    color: '#1e40af',
+    fontFamily: 'Comic Sans MS',
   },
-  balance: {
-    fontSize: 32,
-    color: '#10b981',
-    fontWeight: '700',
-    marginVertical: 16,
+  input: {
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    fontSize: 18,
+    fontFamily: 'Comic Sans MS',
+    color: '#1e40af',
   },
   button: {
-    marginTop: 30,
-    backgroundColor: '#ef4444',
-    paddingVertical: 12,
-    paddingHorizontal: 28,
+    backgroundColor: '#3b82f6',
+    paddingVertical: 14,
     borderRadius: 20,
-    shadowColor: '#ef4444',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 4,
+    marginTop: 24,
+    alignItems: 'center',
+    shadowColor: '#3b82f6',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 18,
+    fontFamily: 'Comic Sans MS',
+  },
+  logoutButton: {
+    marginTop: 40,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#ef4444',
+    fontWeight: '700',
+    fontSize: 18,
+    fontFamily: 'Comic Sans MS',
   },
 });
