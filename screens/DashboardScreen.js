@@ -5,11 +5,15 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getAuth } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import ChallengesSection from '../components/ChallengesSection';
+import FloatingChatbot from '../components/FloatingChatbot';
+import ExpenseForm from '../components/ExpenseForm';
 
 export default function DashboardScreen({ navigation }) {
   const [user, setUser] = useState(null);
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(50));
   const auth = getAuth();
@@ -124,6 +128,7 @@ export default function DashboardScreen({ navigation }) {
                 styles.actionCard,
                 pressed && styles.cardPressed,
               ]}
+              onPress={() => setShowExpenseForm(true)}
             >
               <View style={styles.actionIconContainer}>
                 <MaterialCommunityIcons name="plus-circle" size={32} color="#6366f1" />
@@ -178,6 +183,9 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
 
+        {/* Challenges Section */}
+        <ChallengesSection />
+
         {/* Recent Activity */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -216,6 +224,21 @@ export default function DashboardScreen({ navigation }) {
           </View>
         </View>
       </Animated.View>
+
+      {/* Floating Chatbot */}
+      <FloatingChatbot navigation={navigation} />
+
+      {/* Expense Form Modal */}
+      <ExpenseForm
+        visible={showExpenseForm}
+        onClose={() => setShowExpenseForm(false)}
+        onSuccess={() => {
+          // Refresh user data to show updated balance/spending
+          if (user) {
+            fetchUserData(user.uid);
+          }
+        }}
+      />
     </ScrollView>
   );
 }

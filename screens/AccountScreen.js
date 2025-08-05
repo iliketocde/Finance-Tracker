@@ -200,6 +200,20 @@ export default function AccountScreen({ navigation }) {
                 styles.actionItem,
                 pressed && styles.actionItemPressed,
               ]}
+              onPress={() => navigation.navigate('Upgrade')}
+            >
+              <View style={styles.actionIcon}>
+                <MaterialCommunityIcons name="crown" size={20} color="#f59e0b" />
+              </View>
+              <Text style={styles.actionText}>Upgrade Plan</Text>
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#9ca3af" />
+            </Pressable>
+
+            <Pressable 
+              style={({ pressed }) => [
+                styles.actionItem,
+                pressed && styles.actionItemPressed,
+              ]}
               onPress={() => navigation.navigate('Settings')}
             >
               <View style={styles.actionIcon}>

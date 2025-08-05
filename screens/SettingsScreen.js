@@ -141,6 +141,16 @@ export default function SettingsScreen() {
         {/* Account */}
         <SettingSection title="Account">
           <SettingItem
+            icon="crown"
+            title="Upgrade Plan"
+            subtitle="Unlock premium features"
+            rightComponent={
+              <MaterialCommunityIcons name="chevron-right" size={20} color="#9ca3af" />
+            }
+            onPress={() => navigation.navigate('Upgrade')}
+          />
+
+          <SettingItem
             icon="account-edit"
             title="Edit Profile"
             subtitle="Update your personal information"

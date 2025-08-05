@@ -17,6 +17,7 @@ import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import SavingGoalsScreen from './screens/SavingGoalsScreen';
+import UpgradeScreen from './screens/UpgradeScreen';
 import LoadingScreen from './components/LoadingScreen';
 
 const Stack = createNativeStackNavigator();
@@ -154,6 +155,11 @@ export default function App() {
               name="MainTabs" 
               component={MainTabs} 
               options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Upgrade" 
+              component={UpgradeScreen} 
+              options={{ title: 'Upgrade Plan' }}
             />
             <Stack.Screen name="Chatbot" component={ChatbotScreen} />
           </>
