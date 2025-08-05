@@ -1,0 +1,42 @@
+Upgrade this finance app with the following full set of features:
+
+1. **Upgrade System (UI + Firebase):**
+   - Add a dedicated "Upgrade" screen.
+   - Include three plans: Free, Pro, Plus.
+   - Show features comparison in a card layout.
+   - Add an "Upgrade Plan" button on the Account screen and in Settings.
+   - When a plan is selected, update the user's Firestore document with a `plan` field.
+
+2. **Spending Insights Page (Enhance):**
+   - Pull expenses from Firebase Firestore using the user's ID.
+   - Detect subscriptions automatically based on keywords like "Netflix", "Spotify", etc.
+   - Show a separate "Subscriptions" section on the Spending Insights page with pie charts and totals.
+   - Add time-based filters (daily, weekly, monthly, custom range).
+
+3. **Gamification System:**
+   - Add daily and weekly spending challenges (e.g., "Spend $0 on fast food today").
+   - Track challenge progress in Firestore under the user's document.
+   - Give visual rewards (e.g., badge popups) for completing goals.
+   - Offer incentives like “3-day streak rewards” or “completed 5 challenges = bonus insights”.
+   - Show a "Challenges" section in the dashboard with progress bars.
+
+4. **Chatbot Integration (Floating Widget):**
+   - Add a small chatbot icon that stays at the bottom-right corner of every page.
+   - Clicking it opens a small message box that expands upward.
+   - Also add a dedicated chatbot button in the bottom navigation bar to open it fully.
+   - Ensure chatbot answers are context-aware and can reference the user's data (plan, balance, etc.).
+
+5. **Firebase Integration for Expenses:**
+   - Save all manually added expenses to Firestore using the logged-in user’s ID.
+   - Load expenses in real-time using `onSnapshot()`.
+   - Allow editing and deleting expenses.
+   - Store fields: `amount`, `category`, `description`, `timestamp`, `isSubscription`.
+
+6. **UI Consistency + Style:**
+   - Use Tailwind CSS with a blue, sky blue, and white theme.
+   - Make all screens responsive.
+   - Keep rounded corners (rounded-2xl), spacing (padding-4+), and soft shadows.
+   - Use larger fonts for headings and icons for navigation.
+   - Animate transitions and challenge completions using Framer Motion.
+
+Keep existing Firebase Auth logic. Make sure all changes are clean and modular. All UI components should use the same design language and match the style of the current dashboard.
