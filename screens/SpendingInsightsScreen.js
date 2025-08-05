@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Pressable, Animated } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, Pressable, ScrollView } from 'react-native';
 
 // Mock Spending Data
 const transactions = [
@@ -8,13 +8,9 @@ const transactions = [
   { id: '3', category: 'Transport', amount: 20 },
   { id: '4', category: 'Subscriptions', amount: 40 },
   { id: '5', category: 'Food', amount: 25 },
-];
-
-// Mock Saving Goals Data
-const savingGoals = [
-  { id: 'goal1', name: 'New Laptop', target: 1500, current: 900 },
-  { id: 'goal2', name: 'Vacation', target: 2000, current: 400 },
-  { id: 'goal3', name: 'Emergency Fund', target: 3000, current: 1500 },
+  { id: '6', category: 'Shopping', amount: 120 },
+  { id: '7', category: 'Healthcare', amount: 80 },
+  { id: '8', category: 'Utilities', amount: 150 },
 ];
 
 // Calculate spending by category helper
@@ -47,26 +43,7 @@ const CategoryRow = React.memo(({ category, amount, percentage }) => {
   );
 });
 
-// Saving goal progress bar row
-const SavingGoalRow = React.memo(({ name, target, current }) => {
-  const progressPercent = Math.min(100, (current / target) * 100).toFixed(1);
-
-  return (
-    <View style={styles.row}>
-      <Text style={styles.category}>{name}</Text>
-      <View style={[styles.barBackground, { marginVertical: 8 }]}>
-        <View style={[styles.barFill, { width: `${progressPercent}%`, backgroundColor: '#0ea5e9' }]} />
-      </View>
-      <Text style={styles.amount}>
-        ${current.toFixed(2)} / ${target.toFixed(2)} ({progressPercent}%)
-      </Text>
-    </View>
-  );
-});
-
 export default function SpendingInsightsScreen() {
-  const [showSavingGoals, setShowSavingGoals] = useState(false);
-
   // Spending data
   const spendingByCategory = calculateSpendingByCategory(transactions);
   const totalSpent = transactions.reduce((sum, t) => sum + t.amount, 0);
@@ -82,108 +59,37 @@ export default function SpendingInsightsScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <View style={styles.card}>
+        <Text style={styles.header}>Spending Insights</Text>
 
-      {/* Toggle Buttons */}
-      <View style={styles.toggleContainer}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.toggleButton,
-            !showSavingGoals && styles.toggleButtonActive,
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={() => setShowSavingGoals(false)}
-        >
-          <Text style={[styles.toggleText, !showSavingGoals && styles.toggleTextActive]}>
-            Spending Insights
-          </Text>
-        </Pressable>
+        <View style={styles.totalCard}>
+          <Text style={styles.totalLabel}>Total Spent</Text>
+          <Text style={styles.totalAmount}>${totalSpent.toFixed(2)}</Text>
+        </View>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.toggleButton,
-            showSavingGoals && styles.toggleButtonActive,
-            pressed && { opacity: 0.7 },
-          ]}
-          onPress={() => setShowSavingGoals(true)}
-        >
-          <Text style={[styles.toggleText, showSavingGoals && styles.toggleTextActive]}>
-            Saving Goals
-          </Text>
-        </Pressable>
+        <Text style={styles.subheader}>Spending by Category</Text>
+        <FlatList
+          data={Object.entries(spendingByCategory)}
+          keyExtractor={([category]) => category}
+          renderItem={renderSpendingItem}
+          scrollEnabled={false}
+          contentContainerStyle={{ paddingBottom: 24 }}
+          showsVerticalScrollIndicator={false}
+        />
       </View>
-
-      {!showSavingGoals ? (
-        // Spending Insights View
-        <View style={styles.card}>
-          <Text style={styles.header}>Spending Insights</Text>
-
-          <View style={styles.totalCard}>
-            <Text style={styles.totalLabel}>Total Spent</Text>
-            <Text style={styles.totalAmount}>${totalSpent.toFixed(2)}</Text>
-          </View>
-
-          <Text style={styles.subheader}>Spending by Category</Text>
-          <FlatList
-            data={Object.entries(spendingByCategory)}
-            keyExtractor={([category]) => category}
-            renderItem={renderSpendingItem}
-            contentContainerStyle={{ paddingBottom: 24 }}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
-      ) : (
-        // Saving Goals View (Mock Data)
-        <View style={styles.card}>
-          <Text style={styles.header}>Saving Goals</Text>
-          <FlatList
-            data={savingGoals}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <SavingGoalRow name={item.name} target={item.target} current={item.current} />
-            )}
-            contentContainerStyle={{ paddingBottom: 24 }}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
-      )}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    flex: 1,
     backgroundColor: '#f9fafb',
-    flex: 1,
   },
-  toggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  toggleButton: {
-    flex: 1,
-    marginHorizontal: 6,
-    paddingVertical: 14,
-    backgroundColor: 'rgba(255,255,255,0.65)',
-    borderRadius: 30,
-    alignItems: 'center',
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-  },
-  toggleButtonActive: {
-    backgroundColor: '#3b82f6',
-  },
-  toggleText: {
-    fontFamily: 'OpenSans-SemiBold',
-    fontSize: 18,
-    color: '#3b82f6',
-  },
-  toggleTextActive: {
-    color: '#fff',
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 40,
   },
   card: {
     backgroundColor: 'rgba(255, 255, 255, 0.75)',
@@ -194,7 +100,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 32,
     elevation: 8,
-    flex: 1,
   },
   header: {
     fontFamily: 'OpenSans-Bold',
@@ -237,7 +142,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
     padding: 18,
-    borderRadius: 40, // very rounded oval style
+    borderRadius: 40,
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,

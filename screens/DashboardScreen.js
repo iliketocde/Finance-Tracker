@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { getAuth } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -48,7 +48,7 @@ export default function DashboardScreen() {
   const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
       <View style={styles.header}>
         <Text style={styles.welcomeText}>Welcome back,</Text>
         <Text style={styles.nameText}>{displayName}!</Text>
@@ -79,7 +79,7 @@ export default function DashboardScreen() {
           <Text style={styles.activityText}>No recent transactions</Text>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -87,7 +87,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
+  },
+  contentContainer: {
     padding: 20,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
