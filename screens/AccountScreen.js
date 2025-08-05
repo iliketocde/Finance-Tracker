@@ -2,12 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator, Alert, ScrollView, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getAuth, signOut } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebaseConfig';
+import { useAuth } from '../AuthContext';
+import { db } from '../firebaseConfig';
 
 export default function AccountScreen({ navigation }) {
-  const user = getAuth().currentUser;
+  const { user, userProfile, logout } = useAuth();
   const [balance, setBalance] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -87,7 +87,7 @@ export default function AccountScreen({ navigation }) {
           style: 'destructive',
           onPress: async () => {
             try {
-              await signOut(auth);
+              await logout();
             } catch (error) {
               Alert.alert('Logout Failed', error.message);
             }

@@ -1,13 +1,14 @@
 
-// App.js
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useFonts } from 'expo-font';
 import { StyleSheet, Text, View, Pressable } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+
+import { AuthProvider, useAuth } from './AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 import DashboardScreen from './screens/DashboardScreen';
 import ChatbotScreen from './screens/ChatbotScreen';
@@ -22,28 +23,6 @@ import LoadingScreen from './components/LoadingScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
-const auth = getAuth();
-
-function HeaderButtons({ navigation, isLoggedIn }) {
-  return (
-    <View style={styles.navRightButtons}>
-      <Pressable
-        style={styles.navButton}
-        onPress={() => navigation.navigate('SpendingInsights')}
-      >
-        <Text style={styles.navButtonText}>Insights</Text>
-      </Pressable>
-      {isLoggedIn && (
-        <Pressable
-          style={styles.navButton}
-          onPress={() => navigation.navigate('Account')}
-        >
-          <Text style={styles.navButtonText}>Account</Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
 
 function MainTabs() {
   return (
@@ -118,25 +97,10 @@ function MainTabs() {
   );
 }
 
-export default function App() {
-  const [fontsLoaded] = useFonts({
-    'OpenSans-Regular': require('./assets/fonts/OpenSans-Regular.ttf'),
-    'OpenSans-SemiBold': require('./assets/fonts/OpenSans-SemiBold.ttf'),
-    'OpenSans-Bold': require('./assets/fonts/OpenSans-Bold.ttf'),
-  });
+function AppNavigator() {
+  const { isLoggedIn, isLoading } = useAuth();
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsLoggedIn(!!user);
-      setIsLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  if (!fontsLoaded || isLoading) {
+  if (isLoading) {
     return <LoadingScreen />;
   }
 
@@ -161,16 +125,48 @@ export default function App() {
               component={UpgradeScreen} 
               options={{ title: 'Upgrade Plan' }}
             />
-            <Stack.Screen name="Chatbot" component={ChatbotScreen} />
+            <Stack.Screen 
+              name="Chatbot" 
+              component={ChatbotScreen}
+              options={{ title: 'AI Assistant' }}
+            />
           </>
         ) : (
           <>
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Signup" component={SignupScreen} />
+            <Stack.Screen 
+              name="Login" 
+              component={LoginScreen}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen 
+              name="Signup" 
+              component={SignupScreen}
+              options={{ headerShown: false }}
+            />
           </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  const [fontsLoaded] = useFonts({
+    'OpenSans-Regular': require('./assets/fonts/OpenSans-Regular.ttf'),
+    'OpenSans-SemiBold': require('./assets/fonts/OpenSans-SemiBold.ttf'),
+    'OpenSans-Bold': require('./assets/fonts/OpenSans-Bold.ttf'),
+  });
+
+  if (!fontsLoaded) {
+    return <LoadingScreen />;
+  }
+
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppNavigator />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
