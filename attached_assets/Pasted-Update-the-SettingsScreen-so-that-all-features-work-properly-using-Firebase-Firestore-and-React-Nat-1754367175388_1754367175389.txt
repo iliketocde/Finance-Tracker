@@ -1,0 +1,61 @@
+Update the SettingsScreen so that all features work properly, using Firebase Firestore and React Native best practices. Implement the following:
+
+---
+
+1. **Dark Mode Toggle:**
+   - Use a global theme context (`ThemeContext`) to manage light/dark mode.
+   - When toggled, update the context and persist it to AsyncStorage.
+   - Dynamically apply styles in the app based on the current theme.
+
+2. **Edit Profile Screen:**
+   - Create a new screen called `EditProfileScreen`.
+   - Add form inputs for:
+     - Full name
+     - Bio (optional)
+     - Change profile avatar (image picker from gallery)
+   - Save all data to Firestore under the user's document: `/users/{uid}`.
+   - Avatar should store image URL (use Firebase Storage).
+   - Show a "Save" button with success confirmation and validation.
+
+3. **Navigation:**
+   - Wire up the `onPress` for "Edit Profile" in Settings to navigate to `EditProfileScreen`.
+   - Pass current profile data via context or Firebase.
+
+4. **Privacy & Security:**
+   - When user clicks "Privacy & Security", navigate to a new `PrivacyScreen`.
+   - Show options like:
+     - Two-factor authentication toggle (non-functional for now).
+     - Hide balance switch (update stored preference).
+     - Activity log (fake list of actions).
+   - All toggles should save to Firestore or local storage and reflect in UI.
+
+5. **Biometric Toggle:**
+   - Save biometric preference to local storage (not Firebase).
+   - Optional: Use Expo Local Authentication library to test if biometric is supported.
+
+6. **Backup Toggle:**
+   - Auto Backup preference should be saved to Firestore under `/users/{uid}/preferences/autoBackup: true`.
+
+7. **Firebase Integration:**
+   - On screen load, fetch all user preferences from Firestore (and local storage where needed).
+   - Keep the toggle states in sync with the database.
+
+8. **Image Picker (Avatar Upload):**
+   - Use `expo-image-picker` to allow the user to choose a new profile photo.
+   - Upload to Firebase Storage and store the download URL in Firestore.
+
+9. **Style Updates:**
+   - Ensure dark/light styles are consistent across all setting items.
+   - Add subtle animations when toggling sections.
+   - Use the existing card layout with icons and spacing for consistency.
+
+10. **Extra:**
+    - Prevent multiple updates from firing at once (add `isSaving` state).
+    - Handle loading and error states for Firestore reads/writes.
+
+Ensure all code is modular and Firebase paths follow the structure:
+- Users: `/users/{uid}`
+- Preferences: fields inside the user doc (`darkMode`, `autoBackup`, `biometric`, etc.)
+- Profile: `displayName`, `avatarUrl`
+
+Use hooks and keep logic organized with `useEffect` and `useState`. Write clean, production-ready code.
