@@ -58,7 +58,7 @@ export default function AccountScreen({ navigation }) {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigation.replace('Login'); // or your landing page
+      // Navigation will be handled automatically by auth state change
     } catch (error) {
       Alert.alert('Logout Failed', error.message);
     }
